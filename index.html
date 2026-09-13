@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How the World Actually Works</title>
+<style>
+
+  /* ============ TOKENS ============ */
+  :root{
+    --ink:        #0F2029;   /* blueprint navy background */
+    --ink-2:      #163244;   /* slightly lighter panel navy */
+    --line:       #4C7C8C;   /* muted schematic linework */
+    --line-bright:#7FD1E0;   /* active / hover linework */
+    --paper:      #EFE7D3;   /* aged paper card surface */
+    --paper-ink:  #241C12;   /* text on paper */
+    --amber:      #E3A857;   /* energy / highlight accent */
+    --rust:       #B15C3F;   /* mining / secondary accent */
+    --moss:       #7C9A6B;   /* agriculture accent */
+    --off-white:  #F4F1E8;   /* text on navy */
+    --dim:        #9FB4BC;   /* secondary text on navy */
+
+    --serif: "Zilla Slab", "Iowan Old Style", Georgia, serif;
+    --sans:  "Inter", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--off-white);
+    font-family:var(--sans);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+
+  a{ color:inherit; }
+  h1,h2,h3{ font-family:var(--serif); font-weight:600; margin:0; }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* faint blueprint grid across whole page */
+  .gridlines{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--ink-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ink-2) 1px, transparent 1px);
+    background-size:42px 42px;
+    opacity:0.35;
+  }
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 6vw;
+    font-family:var(--mono); font-size:13px; letter-spacing:0.02em;
+    color:var(--dim);
+    border-bottom:1px solid var(--ink-2);
+  }
+  .topbar .brand{ color:var(--off-white); font-family:var(--serif); font-size:18px; font-weight:600; }
+  .topbar .brand span{ color:var(--line-bright); }
+  .back-link{
+    display:none;
+    font-family:var(--mono); font-size:13px; color:var(--line-bright);
+    text-decoration:none; border-bottom:1px solid var(--line-bright); padding-bottom:2px;
+  }
+  #agriculture.active ~ .topbar .back-link,
+  .view.active .back-link{ display:inline-block; }
+
+  /* ============ HOME ============ */
+  .hero{
+    position:relative; z-index:1;
+    max-width:1100px; margin:0 auto; padding:64px 6vw 20px;
+  }
+  .hero .kicker{
+    font-family:var(--mono); font-size:13px; color:var(--line-bright);
+    margin:0 0 14px;
+  }
+  .hero h1{
+    font-size:clamp(34px,5vw,58px); line-height:1.08; max-width:15ch;
+  }
+  .hero p.lede{
+    max-width:56ch; color:var(--dim); font-size:17px; margin-top:18px;
+  }
+
+  /* network diagram */
+  .network-wrap{
+    position:relative; z-index:1;
+    max-width:1100px; margin:20px auto 90px; padding:0 6vw;
+  }
+  svg.network{ width:100%; height:auto; display:block; }
+  .node-line{
+    stroke:var(--line); stroke-width:1.4; fill:none;
+    stroke-dasharray:4 6;
+    animation: dashflow 5s linear infinite;
+  }
+  @keyframes dashflow{ to{ stroke-dashoffset:-100; } }
+
+  .node{ cursor:pointer; }
+  .node.disabled{ cursor:default; }
+  .node circle.ring{
+    fill:var(--ink-2); stroke:var(--line); stroke-width:1.5;
+    transition:stroke 0.2s, fill 0.2s;
+  }
+  .node.available circle.ring{ stroke:var(--moss); }
+  .node.available:hover circle.ring{ fill:var(--moss); }
+  .node.available:hover text.label{ fill:var(--ink); }
+  .node text.label{
+    font-family:var(--sans); font-weight:600; font-size:13px;
+    fill:var(--off-white); text-anchor:middle; pointer-events:none;
+  }
+  .node text.status{
+    font-family:var(--mono); font-size:10px;
+    fill:var(--dim); text-anchor:middle; pointer-events:none;
+  }
+  .pulse{
+    fill:none; stroke:var(--moss); stroke-width:1.5; opacity:0;
+    animation: pulseOut 3s ease-out infinite;
+  }
+  @keyframes pulseOut{
+    0%{ r:26; opacity:0.7; }
+    100%{ r:46; opacity:0; }
+  }
+
+  .legend{
+    display:flex; gap:28px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:12px; color:var(--dim);
+    margin-top:8px;
+  }
+  .legend .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .legend .dot.on{ background:var(--moss); }
+  .legend .dot.off{ background:var(--line); }
+
+  /* ============ AGRICULTURE PAGE ============ */
+  .topic-hero{
+    position:relative; z-index:1;
+    max-width:900px; margin:0 auto; padding:50px 6vw 10px;
+  }
+  .topic-hero .kicker{ font-family:var(--mono); font-size:13px; color:var(--moss); margin-bottom:10px;}
+  .topic-hero h1{ font-size:clamp(32px,4.6vw,50px); color:var(--off-white); }
+  .topic-hero p.lede{ color:var(--dim); max-width:52ch; margin-top:16px; font-size:17px; }
+
+  .rail{
+    position:relative; z-index:1;
+    max-width:900px; margin:50px auto 100px; padding:0 6vw;
+  }
+  .rail::before{
+    content:""; position:absolute; left:calc(6vw + 27px); top:6px; bottom:6px; width:2px;
+    background:linear-gradient(var(--line), transparent);
+  }
+
+  .era{ position:relative; padding-left:64px; margin-bottom:76px; }
+  .era:last-child{ margin-bottom:0; }
+  .era .node-dot{
+    position:absolute; left:0; top:2px; width:56px; height:56px;
+    border-radius:50%; background:var(--ink-2); border:1.5px solid var(--moss);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:11px; color:var(--moss); text-align:center;
+  }
+  .era h2{ font-size:24px; color:var(--off-white); }
+  .era .when{ font-family:var(--mono); font-size:13px; color:var(--dim); margin:6px 0 18px; }
+
+  .era-body{
+    display:grid; grid-template-columns:1fr 200px; gap:32px; align-items:start;
+  }
+  @media (max-width:640px){ .era-body{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--paper); color:var(--paper-ink);
+    border-radius:3px; padding:22px 24px;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.18);
+  }
+  .card p{ margin:0 0 12px; font-size:15.5px; }
+  .card p:last-child{ margin-bottom:0; }
+  .card .stat{
+    font-family:var(--serif); font-weight:600; font-size:26px; color:var(--rust);
+  }
+  .card .stat-label{ font-family:var(--mono); font-size:11px; color:#5b5342; }
+
+  .anim-box{
+    background:var(--ink-2); border:1px solid var(--line);
+    border-radius:3px; height:180px;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .anim-box svg{ width:100%; height:100%; }
+
+  /* --- ancient: sprouting seed --- */
+  .sprout-stem{ stroke:#8FBF7A; stroke-width:3; fill:none; stroke-dasharray:40; stroke-dashoffset:40;
+    animation: grow 3s ease-in-out infinite; }
+  .sprout-leaf{ fill:#8FBF7A; opacity:0; animation: leafIn 3s ease-in-out infinite; }
+  .sprout-seed{ fill:#6B4A2E; }
+  @keyframes grow{ 0%{ stroke-dashoffset:40; } 40%{ stroke-dashoffset:0; } 80%,100%{ stroke-dashoffset:0; } }
+  @keyframes leafIn{ 0%,40%{ opacity:0; transform:scale(0.4); } 70%,100%{ opacity:1; transform:scale(1); } }
+
+  /* --- modern: yield bars rising --- */
+  .yield-bar{ fill:#E3A857; transform-origin:bottom; animation: rise 2.4s ease-in-out infinite; }
+  @keyframes rise{ 0%{ transform:scaleY(0.15); } 50%{ transform:scaleY(1); } 100%{ transform:scaleY(0.15); } }
+
+  /* --- current: greenhouse pulse --- */
+  .greenhouse{ stroke:#7FD1E0; stroke-width:2; fill:none; }
+  .greenhouse-fill{ fill:#7FD1E0; opacity:0.12; animation: houseGlow 2.6s ease-in-out infinite; }
+  @keyframes houseGlow{ 0%,100%{ opacity:0.06; } 50%{ opacity:0.22; } }
+
+  /* --- future: vertical farm layers lighting --- */
+  .vf-layer{ fill:#6FD08C; opacity:0.15; animation: layerLight 3.6s ease-in-out infinite; }
+  .vf-layer:nth-child(2){ animation-delay:0.5s; }
+  .vf-layer:nth-child(3){ animation-delay:1s; }
+  .vf-layer:nth-child(4){ animation-delay:1.5s; }
+  @keyframes layerLight{ 0%,70%,100%{ opacity:0.15; } 20%{ opacity:0.75; } }
+
+  .spotlights{ margin-top:28px; }
+  .spotlights .heading{
+    font-family:var(--mono); font-size:12px; color:var(--dim);
+    margin:0 0 12px; padding-top:18px; border-top:1px solid var(--ink-2);
+  }
+  .spotlight-row{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:14px;
+  }
+  .spotlight{
+    background:var(--ink-2); border:1px solid var(--line);
+    border-radius:3px; padding:16px 18px;
+  }
+  .spotlight .who{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .spotlight .avatar{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:var(--amber); color:var(--ink);
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .spotlight .name{ font-family:var(--serif); font-weight:600; font-size:15px; color:var(--off-white); line-height:1.25; }
+  .spotlight .year{ font-family:var(--mono); font-size:11px; color:var(--dim); }
+  .spotlight .idea, .spotlight .effect{ font-size:13.5px; color:var(--dim); margin:0 0 10px; }
+  .spotlight .effect{ margin-bottom:0; }
+  .spotlight .tag{
+    display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:0.02em;
+    color:var(--line-bright); margin-bottom:3px;
+  }
+
+  footer{
+    position:relative; z-index:1; text-align:center;
+    font-family:var(--mono); font-size:12px; color:var(--dim);
+    padding:40px 6vw 60px;
+  }
+</style>
+</head>
+<body>
+
+<div class="gridlines"></div>
+
+<div class="topbar">
+  <div class="brand">field<span>//</span>systems</div>
+  <a href="#" class="back-link" onclick="showView('home');return false;">&larr; back to the map</a>
+</div>
+
+<!-- ============ HOME VIEW ============ -->
+<div class="view active" id="home">
+  <div class="hero">
+    <p class="kicker">POC — 01 of many</p>
+    <h1>How the world actually works.</h1>
+    <p class="lede">The stuff that keeps everyone fed, powered, and moving — explained the way you'd explain it to a friend, not a textbook. Pick a system on the map below.</p>
+  </div>
+
+  <div class="network-wrap">
+    <svg class="network" viewBox="0 0 900 480" id="networkSvg">
+      <!-- connecting lines -->
+      <path class="node-line" d="M 450 240 L 190 100"></path>
+      <path class="node-line" d="M 450 240 L 710 100"></path>
+      <path class="node-line" d="M 450 240 L 150 340"></path>
+      <path class="node-line" d="M 450 240 L 470 420"></path>
+      <path class="node-line" d="M 450 240 L 740 350"></path>
+      <path class="node-line" d="M 190 100 L 710 100"></path>
+      <path class="node-line" d="M 150 340 L 470 420"></path>
+      <path class="node-line" d="M 470 420 L 740 350"></path>
+
+      <!-- Agriculture (available) -->
+      <g class="node available" onclick="showView('agriculture')">
+        <circle class="pulse" cx="190" cy="100" r="26"></circle>
+        <circle class="ring" cx="190" cy="100" r="30"></circle>
+        <text class="label" x="190" y="98">Agriculture</text>
+        <text class="status" x="190" y="114">open &rarr;</text>
+      </g>
+
+      <!-- Energy -->
+      <g class="node disabled">
+        <circle class="ring" cx="710" cy="100" r="30"></circle>
+        <text class="label" x="710" y="98">Energy</text>
+        <text class="status" x="710" y="114">next up</text>
+      </g>
+
+      <!-- Mining -->
+      <g class="node disabled">
+        <circle class="ring" cx="150" cy="340" r="30"></circle>
+        <text class="label" x="150" y="334">Mining &amp;</text>
+        <text class="label" x="150" y="350">Materials</text>
+        <text class="status" x="150" y="366">coming soon</text>
+      </g>
+
+      <!-- Supply chains -->
+      <g class="node disabled">
+        <circle class="ring" cx="470" cy="420" r="30"></circle>
+        <text class="label" x="470" y="414">Supply</text>
+        <text class="label" x="470" y="430">Chains</text>
+        <text class="status" x="470" y="446">coming soon</text>
+      </g>
+
+      <!-- Cities / water -->
+      <g class="node disabled">
+        <circle class="ring" cx="740" cy="350" r="30"></circle>
+        <text class="label" x="740" y="344">Cities &amp;</text>
+        <text class="label" x="740" y="360">Water</text>
+        <text class="status" x="740" y="376">coming soon</text>
+      </g>
+
+      <!-- center hub -->
+      <g>
+        <circle cx="450" cy="240" r="22" fill="var(--ink-2)" stroke="var(--amber)" stroke-width="1.5"></circle>
+        <text x="450" y="236" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--amber)">the</text>
+        <text x="450" y="248" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--amber)">world</text>
+      </g>
+    </svg>
+
+    <div class="legend">
+      <span><span class="dot on"></span>open now</span>
+      <span><span class="dot off"></span>in progress — new systems added each week</span>
+    </div>
+  </div>
+
+  <footer>proof of concept — built to test the format before writing the rest of the systems</footer>
+</div>
+
+<!-- ============ AGRICULTURE VIEW ============ -->
+<div class="view" id="agriculture">
+  <div class="topic-hero">
+    <p class="kicker">SYSTEM 01</p>
+    <h1>Agriculture</h1>
+    <p class="lede">Every single meal you've eaten traces back to this. Here's how humans went from staring at a seed to running farms with satellites.</p>
+  </div>
+
+  <div class="rail">
+
+    <!-- ANCIENT -->
+    <div class="era">
+      <div class="node-dot">ANCIENT</div>
+      <h2>The first seed</h2>
+      <p class="when">~12,000 years ago</p>
+      <div class="era-body">
+        <div class="card">
+          <p>For almost all of human history, nobody planted anything — you just walked around and ate whatever was already growing. Then someone noticed a seed that fell on the ground had turned into a whole new plant.</p>
+          <p>That single observation is arguably the most important idea in human history: if a seed becomes food, and you control where the seed goes, you control the food. Early farmers started clearing small patches of land, pushing seeds into the soil on purpose, and carrying water to them by hand.</p>
+          <p>This is the moment humans stopped just <em>finding</em> food and started <em>making</em> it — and it's the reason permanent towns, and eventually cities, became possible at all.</p>
+        </div>
+        <div class="anim-box">
+          <svg viewBox="0 0 200 180">
+            <ellipse class="sprout-seed" cx="100" cy="150" rx="10" ry="6"></ellipse>
+            <path class="sprout-stem" d="M 100 150 L 100 90"></path>
+            <path class="sprout-leaf" d="M 100 100 C 80 95, 70 80, 78 65 C 92 75, 100 90, 100 100 Z"></path>
+            <path class="sprout-leaf" d="M 100 95 C 120 90, 130 75, 122 60 C 108 70, 100 85, 100 95 Z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="spotlights">
+        <p class="heading">who gets the credit</p>
+        <div class="spotlight-row">
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">?</div>
+              <div><div class="name">No single inventor</div><div class="year">multiple places, ~12,000&ndash;9,000 years ago</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>Nobody's name survives, because nobody invented this alone. Groups of people in the Fertile Crescent (wheat, barley), China (rice), and Mesoamerica (corn) each figured out farming independently, without knowing the others existed.</p>
+            <p class="effect"><span class="tag">the effect</span>It's proof that farming wasn't a lucky one-off idea — it was something almost any settled human group eventually worked out on their own.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODERN -->
+    <div class="era">
+      <div class="node-dot">MODERN</div>
+      <h2>Feeding billions</h2>
+      <p class="when">1700s &ndash; late 1900s</p>
+      <div class="era-body">
+        <div class="card">
+          <p>For thousands of years, one farmer could barely grow enough to feed their own family. Then science started figuring out <em>why</em> plants grow — what they eat from the soil, how to breed stronger crop varieties, and how to fight off the insects and diseases that used to wipe out entire harvests.</p>
+          <p>This is where fertilizers, tractors, and eventually GMO crops (plants bred or engineered to resist pests or drought) come in. Yields — how much food one field produces — didn't just go up, they exploded.</p>
+          <p><span class="stat">~400%</span><br><span class="stat-label">rise in global crop yields per acre, 1900s&ndash;today</span></p>
+          <p>The catch: pesticides and herbicides that protect crops can also harm helpful insects and pollute water if overused — a trade-off farmers and scientists are still balancing today.</p>
+        </div>
+        <div class="anim-box">
+          <svg viewBox="0 0 200 180">
+            <g>
+              <rect class="yield-bar" x="30"  y="80" width="24" height="90"></rect>
+              <rect class="yield-bar" x="88"  y="80" width="24" height="90" style="animation-delay:0.3s"></rect>
+              <rect class="yield-bar" x="146" y="80" width="24" height="90" style="animation-delay:0.6s"></rect>
+            </g>
+            <line x1="15" y1="170" x2="185" y2="170" stroke="var(--line)" stroke-width="1"></line>
+          </svg>
+        </div>
+      </div>
+      <div class="spotlights">
+        <p class="heading">who gets the credit</p>
+        <div class="spotlight-row">
+
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">JT</div>
+              <div><div class="name">Jethro Tull</div><div class="year">1701</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>Farmers scattered seed by hand, wasting most of it. Tull built a machine that dropped seeds into the ground in neat, evenly-spaced rows at the right depth.</p>
+            <p class="effect"><span class="tag">the effect</span>Less seed wasted, tidier fields — and the first hint that machines, not just muscle, could run a farm.</p>
+          </div>
+
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">JL</div>
+              <div><div class="name">Justus von Liebig</div><div class="year">1840s</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>Liebig proved plants don't feed on rotted matter directly — they absorb specific minerals like nitrogen, phosphorus, and potassium straight from the soil.</p>
+            <p class="effect"><span class="tag">the effect</span>One insight created the entire fertilizer industry: farmers learned to feed the soil, not just hope the plant found enough on its own.</p>
+          </div>
+
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">H+B</div>
+              <div><div class="name">Fritz Haber &amp; Carl Bosch</div><div class="year">1909&ndash;1913</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>Nitrogen makes up 78% of the air, but plants can't use it as a gas. Haber worked out how to pull it from the air and turn it into fertilizer; Bosch figured out how to do that at factory scale.</p>
+            <p class="effect"><span class="tag">the effect</span>Often called the invention that fed the world — without synthetic nitrogen fertilizer, an estimated half the people alive today wouldn't have enough food.</p>
+          </div>
+
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">NB</div>
+              <div><div class="name">Norman Borlaug</div><div class="year">1960s</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>Borlaug bred short, sturdy wheat that could hold heavier grain without toppling over, and that responded well to fertilizer instead of just growing tall and weak.</p>
+            <p class="effect"><span class="tag">the effect</span>Credited with saving roughly a billion people from famine across Asia and Latin America — the "Green Revolution." Won the Nobel Peace Prize in 1970.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT -->
+    <div class="era">
+      <div class="node-dot">NOW</div>
+      <h2>Growing food anywhere</h2>
+      <p class="when">Today</p>
+      <div class="era-body">
+        <div class="card">
+          <p>Farming today doesn't always need open fields. A <strong>greenhouse</strong> or <strong>polyhouse</strong> is basically a controlled box — it keeps out bad weather and pests, so plants get exactly the light, heat, and humidity they need.</p>
+          <p><strong>Aquaponics</strong> takes it further: fish live in tanks below the plants, their waste feeds the plants, and the plants clean the water for the fish — a tiny closed loop of food production.</p>
+          <p>Sensors, drip irrigation, and drones now help farmers see exactly which patch of a field needs water or nutrients, instead of treating the whole field the same way.</p>
+        </div>
+        <div class="anim-box">
+          <svg viewBox="0 0 200 180">
+            <path class="greenhouse-fill" d="M 30 150 L 30 90 L 100 40 L 170 90 L 170 150 Z"></path>
+            <path class="greenhouse" d="M 30 150 L 30 90 L 100 40 L 170 90 L 170 150"></path>
+            <line class="greenhouse" x1="30" y1="120" x2="170" y2="120"></line>
+            <line class="greenhouse" x1="65" y1="150" x2="65" y2="100"></line>
+            <line class="greenhouse" x1="135" y1="150" x2="135" y2="100"></line>
+          </svg>
+        </div>
+      </div>
+      <div class="spotlights">
+        <p class="heading">who gets the credit</p>
+        <div class="spotlight-row">
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">D+C</div>
+              <div><div class="name">Jennifer Doudna &amp; Emmanuelle Charpentier</div><div class="year">2012</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>They worked out how to reprogram a bacterial defense system called CRISPR to cut and edit any specific piece of DNA — like a find-and-replace tool for genetic code.</p>
+            <p class="effect"><span class="tag">the effect</span>Scientists can now breed disease- or drought-resistant crops in a few years instead of decades of slow trial-and-error breeding. Won the Nobel Prize in Chemistry, 2020.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUTURE -->
+    <div class="era">
+      <div class="node-dot">FUTURE</div>
+      <h2>Farms that stack up</h2>
+      <p class="when">Emerging now &rarr; next few decades</p>
+      <div class="era-body">
+        <div class="card">
+          <p>Nobody knows the future for certain, but a few directions are already being tested at real scale: <strong>vertical farms</strong> that stack crops in layers inside warehouses under LED light, so a building in the middle of a city can grow leafy greens year-round with a fraction of the water and land.</p>
+          <p>AI systems are starting to predict exactly when a crop will get sick, days before a human could notice. And researchers are breeding crops that can survive hotter, drier conditions as the climate shifts.</p>
+          <p>The common thread: less land, less water, less waste, more precision.</p>
+        </div>
+        <div class="anim-box">
+          <svg viewBox="0 0 200 180">
+            <rect class="vf-layer" x="40" y="30"  width="120" height="26"></rect>
+            <rect class="vf-layer" x="40" y="66"  width="120" height="26"></rect>
+            <rect class="vf-layer" x="40" y="102" width="120" height="26"></rect>
+            <rect class="vf-layer" x="40" y="138" width="120" height="26"></rect>
+          </svg>
+        </div>
+      </div>
+      <div class="spotlights">
+        <p class="heading">who gets the credit</p>
+        <div class="spotlight-row">
+          <div class="spotlight">
+            <div class="who">
+              <div class="avatar">DD</div>
+              <div><div class="name">Dickson Despommier</div><div class="year">1999</div></div>
+            </div>
+            <p class="idea"><span class="tag">the idea</span>A Columbia University professor had his students calculate whether New York City could feed itself using rooftop farms. It couldn't — so he proposed stacking farms inside buildings instead of spreading them across rooftops.</p>
+            <p class="effect"><span class="tag">the effect</span>The concept behind every vertical farm being built today. Still mostly limited to leafy greens — grains and fruit trees are far harder to stack.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>next system: energy &mdash; from fire to the grid &middot; check back soon</footer>
+</div>
+
+<script>
+  function showView(id){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({top:0, behavior:'instant'});
+    document.querySelectorAll('.back-link').forEach(b => b.style.display = id === 'home' ? 'none' : 'inline-block');
+  }
+  // init
+  document.querySelectorAll('.back-link').forEach(b => b.style.display = 'none');
+</script>
+
+</body>
+</html>
