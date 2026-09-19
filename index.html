@@ -3,34 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How the World Actually Works</title>
+<title>Beneath It All — Systems That Run the World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 
   /* ============ TOKENS ============ */
   :root{
-    --ink:        #0F2029;   /* blueprint navy background */
-    --ink-2:      #163244;   /* slightly lighter panel navy */
-    --line:       #4C7C8C;   /* muted schematic linework */
-    --line-bright:#7FD1E0;   /* active / hover linework */
-    --paper:      #EFE7D3;   /* aged paper card surface */
-    --paper-ink:  #241C12;   /* text on paper */
-    --amber:      #E3A857;   /* energy / highlight accent */
-    --rust:       #B15C3F;   /* mining / secondary accent */
-    --moss:       #7C9A6B;   /* agriculture accent */
-    --off-white:  #F4F1E8;   /* text on navy */
-    --dim:        #9FB4BC;   /* secondary text on navy */
+    --bg:         #FFFFFF;   /* page background */
+    --ink:        #0B1B33;   /* primary text — deep navy, near-black */
+    --ink-2:      #0E1B30;   /* dark "screen" surfaces (anim boxes, spotlights) */
+    --line:       #CBD9F0;   /* light hairline border, doubles as visible stroke on dark screens */
+    --line-bright:#00D1FF;   /* electric cyan — glow accent on dark surfaces */
+    --paper:      #FFFFFF;   /* content card surface */
+    --paper-ink:  #16233B;   /* text on content card */
+    --amber:      #7C5CFC;   /* highlight accent (avatars, callouts) — violet, not amber anymore */
+    --rust:       #7C5CFC;   /* stat number highlight — violet */
+    --moss:       #1877F2;   /* facebook blue — primary brand accent */
+    --off-white:  #0B1B33;   /* "primary text on brand surfaces" — kept dark since bg is now light */
+    --dim:        #5B6B85;   /* secondary / muted text */
 
-    --serif: "Zilla Slab", "Iowan Old Style", Georgia, serif;
+    --fb-blue:    #1877F2;
+    --fb-blue-dk: #0E5FCB;
+    --cyan:       #00C2FF;
+    --violet:     #7C5CFC;
+    --magenta:    #FF3E9A;
+    --teal:       #12B8A6;
+
+    --serif: "Space Grotesk", "Inter", sans-serif;   /* display / headings */
     --sans:  "Inter", "Helvetica Neue", Arial, sans-serif;
-    --mono:  "IBM Plex Mono", "SF Mono", Consolas, monospace;
+    --mono:  "Space Mono", "IBM Plex Mono", monospace;
   }
 
   *{ box-sizing: border-box; }
   html{ scroll-behavior:smooth; }
   body{
     margin:0;
-    background:var(--ink);
-    color:var(--off-white);
+    background:var(--bg);
+    color:var(--ink);
     font-family:var(--sans);
     line-height:1.5;
     overflow-x:hidden;
@@ -40,38 +51,41 @@
   }
 
   a{ color:inherit; }
-  h1,h2,h3{ font-family:var(--serif); font-weight:600; margin:0; }
+  h1,h2,h3{ font-family:var(--serif); font-weight:600; margin:0; letter-spacing:-0.01em; }
 
   .view{ display:none; }
   .view.active{ display:block; }
 
-  /* faint blueprint grid across whole page */
+  /* soft futuristic glow blobs + faint grid, behind everything */
   .gridlines{
     position:fixed; inset:0; z-index:0; pointer-events:none;
     background-image:
-      linear-gradient(var(--ink-2) 1px, transparent 1px),
-      linear-gradient(90deg, var(--ink-2) 1px, transparent 1px);
-    background-size:42px 42px;
-    opacity:0.35;
+      radial-gradient(560px circle at 12% 8%,  rgba(24,119,242,0.14), transparent 60%),
+      radial-gradient(520px circle at 92% 18%, rgba(124,92,252,0.12), transparent 60%),
+      radial-gradient(560px circle at 50% 95%, rgba(0,194,255,0.10), transparent 60%),
+      linear-gradient(rgba(24,119,242,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(24,119,242,0.05) 1px, transparent 1px);
+    background-size: auto, auto, auto, 44px 44px, 44px 44px;
   }
 
   /* ============ TOP BAR ============ */
   .topbar{
-    position:relative; z-index:2;
+    position:sticky; top:0; z-index:10;
     display:flex; align-items:center; justify-content:space-between;
-    padding:22px 6vw;
+    padding:18px 6vw;
     font-family:var(--mono); font-size:13px; letter-spacing:0.02em;
     color:var(--dim);
-    border-bottom:1px solid var(--ink-2);
+    background:rgba(255,255,255,0.75);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
   }
-  .topbar .brand{ color:var(--off-white); font-family:var(--serif); font-size:18px; font-weight:600; }
-  .topbar .brand span{ color:var(--line-bright); }
+  .topbar .brand{ color:var(--ink); font-family:var(--serif); font-size:18px; font-weight:700; }
+  .topbar .brand span{ color:var(--fb-blue); }
   .back-link{
     display:none;
-    font-family:var(--mono); font-size:13px; color:var(--line-bright);
-    text-decoration:none; border-bottom:1px solid var(--line-bright); padding-bottom:2px;
+    font-family:var(--mono); font-size:13px; color:var(--fb-blue);
+    text-decoration:none; border-bottom:1px solid var(--fb-blue); padding-bottom:2px;
   }
-  #agriculture.active ~ .topbar .back-link,
   .view.active .back-link{ display:inline-block; }
 
   /* ============ HOME ============ */
@@ -79,93 +93,121 @@
     position:relative; z-index:1;
     max-width:1100px; margin:0 auto; padding:64px 6vw 20px;
   }
-  .hero .kicker{
-    font-family:var(--mono); font-size:13px; color:var(--line-bright);
-    margin:0 0 14px;
+  .hero .eyebrow{
+    font-family:var(--mono); font-size:13px; color:var(--fb-blue);
+    letter-spacing:0.03em; margin:0 0 12px;
   }
   .hero h1{
-    font-size:clamp(34px,5vw,58px); line-height:1.08; max-width:15ch;
+    font-size:clamp(38px,5.4vw,62px); line-height:1.06; max-width:14ch;
+    background:linear-gradient(100deg, var(--ink) 25%, var(--fb-blue) 60%, var(--violet) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
   }
   .hero p.lede{
-    max-width:56ch; color:var(--dim); font-size:17px; margin-top:18px;
+    max-width:60ch; color:var(--dim); font-size:17.5px; margin-top:20px;
   }
 
-  /* network diagram */
-  .network-wrap{
+  /* card grid (home) */
+  .grid-wrap{
     position:relative; z-index:1;
-    max-width:1100px; margin:20px auto 90px; padding:0 6vw;
+    max-width:1100px; margin:36px auto 90px; padding:0 6vw;
   }
-  svg.network{ width:100%; height:auto; display:block; }
-  .node-line{
-    stroke:var(--line); stroke-width:1.4; fill:none;
-    stroke-dasharray:4 6;
-    animation: dashflow 5s linear infinite;
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:22px;
   }
-  @keyframes dashflow{ to{ stroke-dashoffset:-100; } }
+  @media (max-width:900px){ .card-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:520px){ .card-grid{ grid-template-columns:1fr; } }
 
-  .node{ cursor:pointer; }
-  .node.disabled{ cursor:default; }
-  .node circle.ring{
-    fill:var(--ink-2); stroke:var(--line); stroke-width:1.5;
-    transition:stroke 0.2s, fill 0.2s;
+  .infra-card{
+    position:relative;
+    aspect-ratio:4 / 2.6;
+    border-radius:16px;
+    background:linear-gradient(135deg, var(--fb-blue) 0%, var(--fb-blue-dk) 55%, var(--violet) 100%);
+    border:1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 10px 30px rgba(24,119,242,0.28);
+    display:flex; align-items:flex-end;
+    padding:16px 18px;
+    cursor:pointer;
+    transition:transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .node.available circle.ring{ stroke:var(--moss); }
-  .node.available:hover circle.ring{ fill:var(--moss); }
-  .node.available:hover text.label{ fill:var(--ink); }
-  .node text.label{
-    font-family:var(--sans); font-weight:600; font-size:13px;
-    fill:var(--off-white); text-anchor:middle; pointer-events:none;
+  .infra-card:hover{ transform:translateY(-4px); box-shadow:0 16px 40px rgba(24,119,242,0.4); }
+  .infra-card .card-title{
+    font-family:var(--sans); font-weight:700; font-size:14.5px; line-height:1.25;
+    color:#fff;
   }
-  .node text.status{
-    font-family:var(--mono); font-size:10px;
-    fill:var(--dim); text-anchor:middle; pointer-events:none;
+  .infra-card .card-status{
+    position:absolute; top:14px; right:16px;
+    font-family:var(--mono); font-size:10.5px; color:rgba(255,255,255,0.85);
   }
-  .pulse{
-    fill:none; stroke:var(--moss); stroke-width:1.5; opacity:0;
-    animation: pulseOut 3s ease-out infinite;
+  .infra-card.disabled{
+    cursor:default;
+    background:#F5F8FF;
+    border:1.5px dashed var(--line);
+    box-shadow:none;
   }
-  @keyframes pulseOut{
-    0%{ r:26; opacity:0.7; }
-    100%{ r:46; opacity:0; }
-  }
-
-  .legend{
-    display:flex; gap:28px; flex-wrap:wrap;
-    font-family:var(--mono); font-size:12px; color:var(--dim);
-    margin-top:8px;
-  }
-  .legend .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
-  .legend .dot.on{ background:var(--moss); }
-  .legend .dot.off{ background:var(--line); }
+  .infra-card.disabled .card-title{ color:var(--dim); }
+  .infra-card.disabled .card-status{ color:var(--dim); }
+  .infra-card.disabled:hover{ transform:none; box-shadow:none; }
 
   /* ============ AGRICULTURE PAGE ============ */
-  .topic-hero{
+  /* ---- Introduction (collapsible) ---- */
+  .intro-collapsible{
     position:relative; z-index:1;
-    max-width:900px; margin:0 auto; padding:50px 6vw 10px;
+    max-width:900px; margin:44px auto 0; padding:0 6vw;
   }
-  .topic-hero .kicker{ font-family:var(--mono); font-size:13px; color:var(--moss); margin-bottom:10px;}
-  .topic-hero h1{ font-size:clamp(32px,4.6vw,50px); color:var(--off-white); }
-  .topic-hero p.lede{ color:var(--dim); max-width:52ch; margin-top:16px; font-size:17px; }
+  .intro-bar{
+    background:linear-gradient(120deg, var(--fb-blue), var(--fb-blue-dk));
+    border:none; box-shadow:0 8px 24px rgba(24,119,242,0.3);
+    border-radius:14px 14px 0 0;
+    color:#fff; font-family:var(--serif); font-weight:700;
+    font-size:22px;
+    padding:16px 22px;
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer;
+  }
+  .intro-bar.collapsed{ border-radius:14px; }
+  .intro-bar .chevron{ font-size:16px; color:#fff; }
+  .intro-content{
+    background:#EFF5FF; color:var(--ink);
+    border:1.5px solid var(--line); border-top:none;
+    border-radius:0 0 14px 14px;
+    padding:18px 24px;
+  }
+  .intro-content p{ margin:0; font-size:15.5px; max-width:70ch; }
+  .intro-content.hidden{ display:none; }
 
-  .rail{
+  /* ---- era tabs ---- */
+  .era-tabs{
     position:relative; z-index:1;
-    max-width:900px; margin:50px auto 100px; padding:0 6vw;
+    max-width:900px; margin:22px auto 0; padding:0 6vw;
+    display:flex; gap:12px; flex-wrap:wrap;
   }
-  .rail::before{
-    content:""; position:absolute; left:calc(6vw + 27px); top:6px; bottom:6px; width:2px;
-    background:linear-gradient(var(--line), transparent);
+  .era-tab{
+    font-family:var(--sans); font-weight:700; font-size:14.5px;
+    padding:13px 20px; border-radius:10px; border:none;
+    cursor:pointer; color:#fff;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
   }
+  .era-tab:hover{ transform:translateY(-2px); }
+  .era-tab.active{ box-shadow:0 0 0 3px rgba(11,27,51,0.18); }
+  .era-tab.ancient{ background:var(--teal); }
+  .era-tab.modern{  background:var(--fb-blue); }
+  .era-tab.current{ background:var(--cyan); color:#04222E; }
+  .era-tab.future{  background:linear-gradient(120deg, var(--violet), var(--magenta)); }
 
-  .era{ position:relative; padding-left:64px; margin-bottom:76px; }
-  .era:last-child{ margin-bottom:0; }
-  .era .node-dot{
-    position:absolute; left:0; top:2px; width:56px; height:56px;
-    border-radius:50%; background:var(--ink-2); border:1.5px solid var(--moss);
-    display:flex; align-items:center; justify-content:center;
-    font-family:var(--mono); font-size:11px; color:var(--moss); text-align:center;
+  /* ---- era content panel ---- */
+  .era-panel-wrap{
+    position:relative; z-index:1;
+    max-width:900px; margin:0 auto 100px; padding:6vw; padding-top:34px; padding-bottom:44px;
+    background:#F7FAFF; border:1.5px solid var(--line); border-radius:0 26px 26px 26px;
+    box-shadow:0 20px 60px rgba(24,119,242,0.08);
   }
-  .era h2{ font-size:24px; color:var(--off-white); }
-  .era .when{ font-family:var(--mono); font-size:13px; color:var(--dim); margin:6px 0 18px; }
+  .era-panel{ display:none; }
+  .era-panel.active{ display:block; }
+
+  .era-panel h3{ font-size:24px; color:var(--ink); }
+  .era-panel .when{ font-family:var(--mono); font-size:13px; color:var(--dim); margin:6px 0 22px; }
 
   .era-body{
     display:grid; grid-template-columns:1fr 200px; gap:32px; align-items:start;
@@ -174,71 +216,79 @@
 
   .card{
     background:var(--paper); color:var(--paper-ink);
-    border-radius:3px; padding:22px 24px;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.18);
+    border-radius:14px; padding:22px 24px;
+    border:1px solid var(--line);
+    border-left:4px solid var(--fb-blue);
+    box-shadow: 0 8px 24px rgba(24,119,242,0.08);
   }
   .card p{ margin:0 0 12px; font-size:15.5px; }
   .card p:last-child{ margin-bottom:0; }
   .card .stat{
-    font-family:var(--serif); font-weight:600; font-size:26px; color:var(--rust);
+    font-family:var(--serif); font-weight:700; font-size:26px; color:var(--violet);
   }
-  .card .stat-label{ font-family:var(--mono); font-size:11px; color:#5b5342; }
+  .card .stat-label{ font-family:var(--mono); font-size:11px; color:var(--dim); }
 
   .anim-box{
-    background:var(--ink-2); border:1px solid var(--line);
-    border-radius:3px; height:180px;
+    background:var(--ink-2); border:1px solid var(--line-bright);
+    box-shadow:0 0 24px rgba(0,209,255,0.25) inset, 0 8px 24px rgba(0,209,255,0.12);
+    border-radius:14px; height:180px;
     display:flex; align-items:center; justify-content:center;
     overflow:hidden;
   }
   .anim-box svg{ width:100%; height:100%; }
 
+  .era-panel .spotlights .heading{
+    color:var(--dim); border-top:1px solid var(--line);
+  }
+
   /* --- ancient: sprouting seed --- */
-  .sprout-stem{ stroke:#8FBF7A; stroke-width:3; fill:none; stroke-dasharray:40; stroke-dashoffset:40;
+  .sprout-stem{ stroke:#4ADE9C; stroke-width:3; fill:none; stroke-dasharray:40; stroke-dashoffset:40;
     animation: grow 3s ease-in-out infinite; }
-  .sprout-leaf{ fill:#8FBF7A; opacity:0; animation: leafIn 3s ease-in-out infinite; }
-  .sprout-seed{ fill:#6B4A2E; }
+  .sprout-leaf{ fill:#4ADE9C; opacity:0; animation: leafIn 3s ease-in-out infinite; }
+  .sprout-seed{ fill:#8B6A45; }
   @keyframes grow{ 0%{ stroke-dashoffset:40; } 40%{ stroke-dashoffset:0; } 80%,100%{ stroke-dashoffset:0; } }
   @keyframes leafIn{ 0%,40%{ opacity:0; transform:scale(0.4); } 70%,100%{ opacity:1; transform:scale(1); } }
 
   /* --- modern: yield bars rising --- */
-  .yield-bar{ fill:#E3A857; transform-origin:bottom; animation: rise 2.4s ease-in-out infinite; }
+  .yield-bar{ fill:#00D1FF; transform-origin:bottom; animation: rise 2.4s ease-in-out infinite; }
   @keyframes rise{ 0%{ transform:scaleY(0.15); } 50%{ transform:scaleY(1); } 100%{ transform:scaleY(0.15); } }
 
   /* --- current: greenhouse pulse --- */
-  .greenhouse{ stroke:#7FD1E0; stroke-width:2; fill:none; }
-  .greenhouse-fill{ fill:#7FD1E0; opacity:0.12; animation: houseGlow 2.6s ease-in-out infinite; }
+  .greenhouse{ stroke:#00D1FF; stroke-width:2; fill:none; }
+  .greenhouse-fill{ fill:#00D1FF; opacity:0.12; animation: houseGlow 2.6s ease-in-out infinite; }
   @keyframes houseGlow{ 0%,100%{ opacity:0.06; } 50%{ opacity:0.22; } }
 
   /* --- future: vertical farm layers lighting --- */
-  .vf-layer{ fill:#6FD08C; opacity:0.15; animation: layerLight 3.6s ease-in-out infinite; }
+  .vf-layer{ fill:#B389FF; opacity:0.15; animation: layerLight 3.6s ease-in-out infinite; }
   .vf-layer:nth-child(2){ animation-delay:0.5s; }
   .vf-layer:nth-child(3){ animation-delay:1s; }
   .vf-layer:nth-child(4){ animation-delay:1.5s; }
-  @keyframes layerLight{ 0%,70%,100%{ opacity:0.15; } 20%{ opacity:0.75; } }
+  @keyframes layerLight{ 0%,70%,100%{ opacity:0.15; } 20%{ opacity:0.85; } }
 
   .spotlights{ margin-top:28px; }
   .spotlights .heading{
     font-family:var(--mono); font-size:12px; color:var(--dim);
-    margin:0 0 12px; padding-top:18px; border-top:1px solid var(--ink-2);
+    margin:0 0 12px; padding-top:18px; border-top:1px solid var(--line);
   }
   .spotlight-row{
     display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
     gap:14px;
   }
   .spotlight{
-    background:var(--ink-2); border:1px solid var(--line);
-    border-radius:3px; padding:16px 18px;
+    background:var(--ink-2); border:1px solid rgba(0,209,255,0.3);
+    box-shadow:0 8px 20px rgba(0,209,255,0.1);
+    border-radius:12px; padding:16px 18px;
   }
   .spotlight .who{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
   .spotlight .avatar{
     width:34px; height:34px; border-radius:50%; flex-shrink:0;
-    background:var(--amber); color:var(--ink);
+    background:linear-gradient(135deg, var(--violet), var(--magenta)); color:#fff;
     font-family:var(--mono); font-size:11px; font-weight:700;
     display:flex; align-items:center; justify-content:center;
   }
-  .spotlight .name{ font-family:var(--serif); font-weight:600; font-size:15px; color:var(--off-white); line-height:1.25; }
-  .spotlight .year{ font-family:var(--mono); font-size:11px; color:var(--dim); }
-  .spotlight .idea, .spotlight .effect{ font-size:13.5px; color:var(--dim); margin:0 0 10px; }
+  .spotlight .name{ font-family:var(--serif); font-weight:600; font-size:15px; color:#fff; line-height:1.25; }
+  .spotlight .year{ font-family:var(--mono); font-size:11px; color:#8FA3C4; }
+  .spotlight .idea, .spotlight .effect{ font-size:13.5px; color:#B9C7E0; margin:0 0 10px; }
   .spotlight .effect{ margin-bottom:0; }
   .spotlight .tag{
     display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:0.02em;
@@ -257,80 +307,91 @@
 <div class="gridlines"></div>
 
 <div class="topbar">
-  <div class="brand">field<span>//</span>systems</div>
+  <div class="brand">beneath<span>·</span>it·all</div>
   <a href="#" class="back-link" onclick="showView('home');return false;">&larr; back to the map</a>
 </div>
 
 <!-- ============ HOME VIEW ============ -->
 <div class="view active" id="home">
   <div class="hero">
-    <p class="kicker">POC — 01 of many</p>
-    <h1>How the world actually works.</h1>
-    <p class="lede">The stuff that keeps everyone fed, powered, and moving — explained the way you'd explain it to a friend, not a textbook. Pick a system on the map below.</p>
+    <p class="eyebrow">systems of civilization</p>
+    <h1>Beneath It All</h1>
+    <p class="lede">Everything around you runs on systems you were never quite taught — the ones that grow your food, move your money, carry your power, and even hold your own body and mind together. This is a field guide to them: how each one started, how it works right now, and where it's headed. Start wherever you're curious.</p>
   </div>
 
-  <div class="network-wrap">
-    <svg class="network" viewBox="0 0 900 480" id="networkSvg">
-      <!-- connecting lines -->
-      <path class="node-line" d="M 450 240 L 190 100"></path>
-      <path class="node-line" d="M 450 240 L 710 100"></path>
-      <path class="node-line" d="M 450 240 L 150 340"></path>
-      <path class="node-line" d="M 450 240 L 470 420"></path>
-      <path class="node-line" d="M 450 240 L 740 350"></path>
-      <path class="node-line" d="M 190 100 L 710 100"></path>
-      <path class="node-line" d="M 150 340 L 470 420"></path>
-      <path class="node-line" d="M 470 420 L 740 350"></path>
+  <div class="grid-wrap">
+    <div class="card-grid">
 
-      <!-- Agriculture (available) -->
-      <g class="node available" onclick="showView('agriculture')">
-        <circle class="pulse" cx="190" cy="100" r="26"></circle>
-        <circle class="ring" cx="190" cy="100" r="30"></circle>
-        <text class="label" x="190" y="98">Agriculture</text>
-        <text class="status" x="190" y="114">open &rarr;</text>
-      </g>
+      <div class="infra-card" onclick="showView('agriculture')">
+        <span class="card-status">open &rarr;</span>
+        <span class="card-title">Agriculture</span>
+      </div>
 
-      <!-- Energy -->
-      <g class="node disabled">
-        <circle class="ring" cx="710" cy="100" r="30"></circle>
-        <text class="label" x="710" y="98">Energy</text>
-        <text class="status" x="710" y="114">next up</text>
-      </g>
+      <div class="infra-card disabled">
+        <span class="card-status">next up</span>
+        <span class="card-title">Energy</span>
+      </div>
 
-      <!-- Mining -->
-      <g class="node disabled">
-        <circle class="ring" cx="150" cy="340" r="30"></circle>
-        <text class="label" x="150" y="334">Mining &amp;</text>
-        <text class="label" x="150" y="350">Materials</text>
-        <text class="status" x="150" y="366">coming soon</text>
-      </g>
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Mining &amp; Processing</span>
+      </div>
 
-      <!-- Supply chains -->
-      <g class="node disabled">
-        <circle class="ring" cx="470" cy="420" r="30"></circle>
-        <text class="label" x="470" y="414">Supply</text>
-        <text class="label" x="470" y="430">Chains</text>
-        <text class="status" x="470" y="446">coming soon</text>
-      </g>
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Manufacturing</span>
+      </div>
 
-      <!-- Cities / water -->
-      <g class="node disabled">
-        <circle class="ring" cx="740" cy="350" r="30"></circle>
-        <text class="label" x="740" y="344">Cities &amp;</text>
-        <text class="label" x="740" y="360">Water</text>
-        <text class="status" x="740" y="376">coming soon</text>
-      </g>
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Transportation &amp; Logistics</span>
+      </div>
 
-      <!-- center hub -->
-      <g>
-        <circle cx="450" cy="240" r="22" fill="var(--ink-2)" stroke="var(--amber)" stroke-width="1.5"></circle>
-        <text x="450" y="236" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--amber)">the</text>
-        <text x="450" y="248" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--amber)">world</text>
-      </g>
-    </svg>
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Payments &amp; Finance</span>
+      </div>
 
-    <div class="legend">
-      <span><span class="dot on"></span>open now</span>
-      <span><span class="dot off"></span>in progress — new systems added each week</span>
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Law &amp; Governance</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Education &amp; Research</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Human Body</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Healthcare</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Earth &amp; The Environment</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Communication</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Water &amp; Sewage</span>
+      </div>
+
+      <div class="infra-card disabled">
+        <span class="card-status">coming soon</span>
+        <span class="card-title">Human Mind</span>
+      </div>
+
     </div>
   </div>
 
@@ -339,18 +400,28 @@
 
 <!-- ============ AGRICULTURE VIEW ============ -->
 <div class="view" id="agriculture">
-  <div class="topic-hero">
-    <p class="kicker">SYSTEM 01</p>
-    <h1>Agriculture</h1>
-    <p class="lede">Every single meal you've eaten traces back to this. Here's how humans went from staring at a seed to running farms with satellites.</p>
+  <div class="intro-collapsible">
+    <div class="intro-bar" id="introBar" onclick="toggleIntro()">
+      <span>Introduction</span>
+      <span class="chevron" id="introChevron">&#9662;</span>
+    </div>
+    <div class="intro-content" id="introContent">
+      <p>Every single meal you've eaten traces back to this. Here's how humans went from staring at a seed to running farms with satellites &mdash; from the first person to notice a seed sprout, through the chemistry and machines that let farms feed billions, to the sensors and gene editing running fields today, and where it's headed next.</p>
+    </div>
   </div>
 
-  <div class="rail">
+  <div class="era-tabs">
+    <button class="era-tab ancient active" onclick="showEra('ancient')">Ancient History</button>
+    <button class="era-tab modern" onclick="showEra('modern')">Modern History</button>
+    <button class="era-tab current" onclick="showEra('current')">Current Time</button>
+    <button class="era-tab future" onclick="showEra('future')">Future</button>
+  </div>
+
+  <div class="era-panel-wrap">
 
     <!-- ANCIENT -->
-    <div class="era">
-      <div class="node-dot">ANCIENT</div>
-      <h2>The first seed</h2>
+    <div class="era-panel active" id="era-ancient">
+      <h3>The first seed</h3>
       <p class="when">~12,000 years ago</p>
       <div class="era-body">
         <div class="card">
@@ -383,9 +454,8 @@
     </div>
 
     <!-- MODERN -->
-    <div class="era">
-      <div class="node-dot">MODERN</div>
-      <h2>Feeding billions</h2>
+    <div class="era-panel" id="era-modern">
+      <h3>Feeding billions</h3>
       <p class="when">1700s &ndash; late 1900s</p>
       <div class="era-body">
         <div class="card">
@@ -450,9 +520,8 @@
     </div>
 
     <!-- CURRENT -->
-    <div class="era">
-      <div class="node-dot">NOW</div>
-      <h2>Growing food anywhere</h2>
+    <div class="era-panel" id="era-current">
+      <h3>Growing food anywhere</h3>
       <p class="when">Today</p>
       <div class="era-body">
         <div class="card">
@@ -486,9 +555,8 @@
     </div>
 
     <!-- FUTURE -->
-    <div class="era">
-      <div class="node-dot">FUTURE</div>
-      <h2>Farms that stack up</h2>
+    <div class="era-panel" id="era-future">
+      <h3>Farms that stack up</h3>
       <p class="when">Emerging now &rarr; next few decades</p>
       <div class="era-body">
         <div class="card">
@@ -532,6 +600,23 @@
     window.scrollTo({top:0, behavior:'instant'});
     document.querySelectorAll('.back-link').forEach(b => b.style.display = id === 'home' ? 'none' : 'inline-block');
   }
+
+  function showEra(name){
+    document.querySelectorAll('.era-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('era-' + name).classList.add('active');
+    document.querySelectorAll('.era-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.era-tab.' + name).classList.add('active');
+  }
+
+  function toggleIntro(){
+    const content = document.getElementById('introContent');
+    const bar = document.getElementById('introBar');
+    const chevron = document.getElementById('introChevron');
+    const collapsed = content.classList.toggle('hidden');
+    bar.classList.toggle('collapsed', collapsed);
+    chevron.innerHTML = collapsed ? '&#9656;' : '&#9662;';
+  }
+
   // init
   document.querySelectorAll('.back-link').forEach(b => b.style.display = 'none');
 </script>
